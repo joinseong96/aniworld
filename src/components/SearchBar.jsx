@@ -24,3 +24,12 @@ export default function SearchBar({ value, onChange, onSearch }) {
 		</div>
 	);
 }
+
+//  사용자 타이핑
+//  → onChange 실행
+//  → HomePage의 setQuery로 query 상태 업데이트
+//  → query가 value로 다시 SearchBar에 전달되어 화면에 보임
+
+//  사용자가 Enter 또는 검색 버튼 클릭
+//  → onSearch(= HomePage의 handleSearch) 실행
+//  → API 호출 시작

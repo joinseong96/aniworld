@@ -10,11 +10,15 @@ export default function HomePage() {
 	const [error, setError] = useState("");
 
 	const handleSearch = async () => {
+		// async : 이 함수 안에서 await를 쓸 거다 라는 선언.
 		if (!query.trim()) return;
-
+		// trim : 앞 뒤 공백을 잘라주는 함수
 		setLoading(true);
+		// 검색 시작 시 로딩 스피너 활성화
 		setError("");
+		// 이전 에러 메시지 초기화
 		setAnimes([]);
+		// 이전 검색 결과 초기화
 
 		const gqlQuery = `
       query ($search: String) {
@@ -63,7 +67,7 @@ export default function HomePage() {
 	return (
 		<div className="max-w-5xl mx-auto px-6 py-10">
 			<div className="text-center mb-10">
-				<h1 className="text-4xl font-bold text-white mb-3">🎌 AniWorld</h1>
+				<h1 className="text-4xl font-bold text-white mb-3">ANIWORLD</h1>
 				<p className="text-gray-400">좋아하는 애니를 검색해보세요</p>
 			</div>
 
