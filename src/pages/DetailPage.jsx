@@ -48,7 +48,7 @@ export default function DetailPage() {
 				const data = await response.json();
 				setAnime(data.data.Media);
 			} catch (err) {
-				setError("데이터를 불러오는 데 실패했어요.");
+				setError("데이터를 불러오는 데 실패했습니다.");
 			} finally {
 				setLoading(false);
 			}
