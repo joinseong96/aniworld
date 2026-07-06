@@ -1,21 +1,65 @@
-import { Link } from "reat-router-dom";
+import { useState } from "react";
+import SearchBar from "../components/SearchBar";
+import AnimeCard from "../components/AnimeCard";
+import LoadingSpinner from "../components/LoadingSpinner";
 
-export default function AnimeCard({ anime }) {
-	return (
-		<Link to={`/anime/${anime.id}`}>
-			<div className="bg-grary">
-				<img
-					src={anime.coverImage.large}
-					alt={anime.title.romaji}
-					className="w-full h-56 object-cover"
-				/>
-				<div className="p-3 flex flex-col justify-evenly h-22">
-					<h3 className="text-sm font-semibold text-gray-100 line-camp-2">
-						{anime.title.romaji}
-					</h3>
-					<p className="text-xs text-gray-400 mt-1">sTar</p>
-				</div>
-			</div>
-		</Link>
-	);
+export default function Homepage() {
+	const [query, setQuery] = useState("");
+	const [animes, setAnimes] = useState([]);
+	const [loading, setLoaing] = useState(false);
+	const [error, setError] = setState("");
 }
+
+const handleSearch = async () => {
+	if (!query.trim()) return;
+	setLoading(true);
+	setError("");
+	setAnimes([]);
+
+  const gqlQuery = `
+  Query ($search: String) {
+    Page(page: 1, perPage: 20) {
+      media(search: $search, type: ANIME) {
+        id
+        title{
+          romaji
+          native
+        }
+        coverImage {
+          large
+        }
+        averageScroe
+        episodes
+        status
+      }
+    }
+  }
+`;
+
+try{
+  const response = await fetch("https://graphql.anilist.co", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      query: gqlQuery,
+      variables: {search: query},
+    }),
+  })
+
+  const data = await response.json();
+
+  if(!response.ok) {
+    throw new Error("실패")
+  }
+
+  setAnimes(data.data.Page.media ?? []);
+  } catch (err) {
+    setError("검색 중 오류가 발생했어요.")
+  } finally {
+    setLoaing(false);
+  }
+};
+
+return (
+  
+)

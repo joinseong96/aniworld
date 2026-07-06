@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
+// 컴포넌트가 처음 뜰 때 api를 호출하기 위한 useEffect, 상태관리를 위한 useState
 import { useParams, useNavigate } from "react-router-dom";
+// URL에서 :id 값 꺼내기 위한 useParams, 뒤로가기 기능을 위한 useNavigate
 import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function DetailPage() {
 	const { id } = useParams();
+	// URL에서 id를 꺼냄 /anime/20으로 접속했으면 id가 "20"
 	const navigate = useNavigate();
+	// 페이지 이동 함수를 반환, navigate(-1)은 이전 페이지로 이동
 	const [anime, setAnime] = useState(null);
+	// API로 받아온 애니 상세 데이터 (처음엔 null)
 	const [loading, setLoading] = useState(true);
+	// HomePage랑 다르게 처음부터 true, 페이지가 뜨자마자 바로 API 호출하기 때문
 	const [error, setError] = useState("");
 
 	useEffect(() => {
@@ -34,6 +40,9 @@ export default function DetailPage() {
           }
         }
       `;
+			// HomePage와 다른 점 두가지
+			// $search가 아닌 $id 검색어가 아닌 고유 아이디로 불러옴
+			// Page가 아닌 Media 목록이 아니라 1개의 애니 상세 정보를 요청
 
 			try {
 				const response = await fetch("https://graphql.anilist.co", {
@@ -42,6 +51,8 @@ export default function DetailPage() {
 					body: JSON.stringify({
 						query: gqlQuery,
 						variables: { id: Number(id) },
+						// useParams으로 꺼낸 id값은 문자열 "20"
+						// AniList는 id 숫자 20을 필요로 해서 Number함수를 사용
 					}),
 				});
 
@@ -56,6 +67,8 @@ export default function DetailPage() {
 
 		fetchAnime();
 	}, [id]);
+	// id가 바뀔 때마다 실행
+	// []가 비워져 있으면 처음 한번만 실행
 
 	if (loading) return <LoadingSpinner />;
 	if (error) return <p className="text-center text-red-400 py-20">{error}</p>;
@@ -109,6 +122,7 @@ export default function DetailPage() {
 								__html: anime.description,
 							}}
 						/>
+						// dangerouslySetInnerHTML html 태그 보임 방지
 					)}
 				</div>
 			</div>
