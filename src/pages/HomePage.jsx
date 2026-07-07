@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SearchBar from "../components/SearchBar";
 import AnimeCard from "../components/AnimeCard";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -12,6 +12,56 @@ export default function HomePage() {
 	// 로딩 중인지 여부
 	const [error, setError] = useState("");
 	// 에러 메시지
+	const [popularAnimes, setPopularAnimes] = useState([]);
+	// 초기 화면에 보여줄 인기 애니 목록
+	const [popularLoading, setPopularLoading] = useState(true);
+	// 인기 애니 로딩 중인지 여부 (첫 진입 시 true로 시작)
+
+	useEffect(() => {
+		const fetchPopularAnimes = async () => {
+			const gqlQuery = `
+      query {
+        Page(page: 1, perPage: 15) {
+          media(sort: POPULARITY_DESC, type: ANIME) {
+            id
+            title {
+              romaji
+              native
+            }
+            coverImage {
+              large
+            }
+            averageScore
+            episodes
+            status
+          }
+        }
+      }
+    `;
+
+			try {
+				const response = await fetch("https://graphql.anilist.co", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ query: gqlQuery }),
+				});
+
+				const data = await response.json();
+
+				if (!response.ok) {
+					throw new Error("API 응답 실패");
+				}
+
+				setPopularAnimes(data.data.Page.media ?? []);
+			} catch (err) {
+				setPopularAnimes([]);
+			} finally {
+				setPopularLoading(false);
+			}
+		};
+
+		fetchPopularAnimes();
+	}, []);
 
 	const handleSearch = async () => {
 		// async : 이 함수 안에서 await를 쓸 거다 라는 선언.
@@ -69,6 +119,9 @@ export default function HomePage() {
 		}
 	};
 
+	const isSearchMode = query.trim().length > 0;
+	// 현재 검색어가 있는 상태인지 true / false로 담아낸 변수
+
 	return (
 		<div className="max-w-5xl mx-auto px-6 py-10">
 			<div className="text-center mb-10">
@@ -88,16 +141,35 @@ export default function HomePage() {
 
 			{error && <p className="text-center text-red-400">{error}</p>}
 
-			{!loading && !error && animes.length === 0 && query && (
+			{!loading && !error && isSearchMode && animes.length === 0 && (
 				<p className="text-center text-gray-500">검색 결과가 없어요.</p>
-				// 로딩도 아니고 에러도 없고 애니 결과도 없고 쿼리만(검색어만) 있다면
+				// 로딩도 아니고 에러도 없는데 검색어는 있고 애니 결과도 없다면
 			)}
 
-			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-				{animes.map((anime) => (
-					<AnimeCard key={anime.id} anime={anime} />
-				))}
-			</div>
+			{!loading && isSearchMode && animes.length > 0 && (
+				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+					{animes.map((anime) => (
+						<AnimeCard key={anime.id} anime={anime} />
+					))}
+				</div>
+				// 로딩 상태는 아니고 검색어는 있고 애니 결과가 있다면
+			)}
+
+			{!isSearchMode && (
+				<div>
+					<h2 className="text-xl font-bold text-white mb-4">인기 애니메이션</h2>
+
+					{popularLoading && <LoadingSpinner />}
+
+					{!popularLoading && (
+						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+							{popularAnimes.map((anime) => (
+								<AnimeCard key={anime.id} anime={anime} />
+							))}
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }
