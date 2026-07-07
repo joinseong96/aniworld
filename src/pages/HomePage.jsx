@@ -16,6 +16,12 @@ export default function HomePage() {
 	// 초기 화면에 보여줄 인기 애니 목록
 	const [popularLoading, setPopularLoading] = useState(true);
 	// 인기 애니 로딩 중인지 여부 (첫 진입 시 true로 시작)
+	const [page, setPage] = useState(1);
+	// 현재 검색 결과가 몇 페이지째인지
+	const [hasNextPage, setHasNextPage] = useState(false);
+	// 다음 페이지가 더 있는지 여부
+	const [loadingMore, setLoadingMore] = useState(false);
+	// 더보기 버튼 클릭으로 추가 로딩 중인지 구분
 
 	useEffect(() => {
 		const fetchPopularAnimes = async () => {
@@ -63,20 +69,14 @@ export default function HomePage() {
 		fetchPopularAnimes();
 	}, []);
 
-	const handleSearch = async () => {
+	const fetchSearchResults = async (searchQuery, pageNum, isLoadMore) => {
 		// async : 이 함수 안에서 await를 쓸 거다 라는 선언.
-		if (!query.trim()) return;
-		// trim : 앞 뒤 공백을 잘라주는 함수
-		setLoading(true);
-		// 검색 시작 시 로딩 스피너 활성화
-		setError("");
-		// 이전 에러 메시지 초기화
-		setAnimes([]);
-		// 이전 검색 결과 초기화
-
 		const gqlQuery = `
-      query ($search: String) {
-        Page(page: 1, perPage: 20) {
+      query ($search: String, $page: Int) {
+        Page(page: $page, perPage: 20) {
+          pageInfo {
+            hasNextPage
+          }
           media(search: $search, type: ANIME) {
             id
             title {
@@ -101,7 +101,7 @@ export default function HomePage() {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					query: gqlQuery,
-					variables: { search: query },
+					variables: { search: searchQuery, page: pageNum },
 				}),
 			});
 
@@ -111,12 +111,46 @@ export default function HomePage() {
 				throw new Error("API 응답 실패");
 			}
 
-			setAnimes(data.data.Page.media ?? []);
+			const newAnimes = data.data.Page.media ?? [];
+
+			if (isLoadMore) {
+				setAnimes((prev) => [...prev, ...newAnimes]);
+				// 기존 목록 뒤에 새로 받아온 목록을 이어붙임
+			} else {
+				setAnimes(newAnimes);
+				// 새 검색이면 기존 목록을 통째로 교체
+			}
+
+			setHasNextPage(data.data.Page.pageInfo.hasNextPage);
 		} catch (err) {
 			setError("검색 중 오류가 발생했어요. 다시 시도해주세요.");
 		} finally {
 			setLoading(false);
+			setLoadingMore(false);
 		}
+	};
+
+	const handleSearch = async () => {
+		if (!query.trim()) return;
+		// trim : 앞 뒤 공백을 잘라주는 함수
+		setLoading(true);
+		// 검색 시작 시 로딩 스피너 활성화
+		setError("");
+		// 이전 에러 메시지 초기화
+		setAnimes([]);
+		// 이전 검색 결과 초기화
+		setPage(1);
+		// 새 검색이니 페이지를 1로 초기화
+
+		await fetchSearchResults(query, 1, false);
+	};
+
+	const handleLoadMore = async () => {
+		const nextPage = page + 1;
+		setLoadingMore(true);
+		setPage(nextPage);
+
+		await fetchSearchResults(query, nextPage, true);
 	};
 
 	const isSearchMode = query.trim().length > 0;
@@ -125,8 +159,8 @@ export default function HomePage() {
 	return (
 		<div className="max-w-5xl mx-auto px-6 py-10">
 			<div className="text-center mb-10">
-				<h1 className="text-4xl font-bold text-white mb-3">ANIWORLD</h1>
-				<p className="text-gray-400">좋아하는 애니를 검색해보세요</p>
+				{/* <h1 className="text-4xl font-bold text-white mb-3">ANIWORLD</h1> */}
+				{/* <p className="text-gray-400">좋아하는 애니를 검색해보세요</p> */}
 			</div>
 
 			<div className="flex justify-center mb-10">
@@ -147,12 +181,25 @@ export default function HomePage() {
 			)}
 
 			{!loading && isSearchMode && animes.length > 0 && (
-				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-					{animes.map((anime) => (
-						<AnimeCard key={anime.id} anime={anime} />
-					))}
-				</div>
 				// 로딩 상태는 아니고 검색어는 있고 애니 결과가 있다면
+				<>
+					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+						{animes.map((anime) => (
+							<AnimeCard key={anime.id} anime={anime} />
+						))}
+					</div>
+					{hasNextPage && (
+						<div className="flex justify-center mt-8">
+							<button
+								onClick={handleLoadMore}
+								disabled={loadingMore}
+								className="px-6 py-2 bg-gray-800 text-gray-300 text-sm rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+							>
+								{loadingMore ? "불러오는 중..." : "더보기"}
+							</button>
+						</div>
+					)}
+				</>
 			)}
 
 			{!isSearchMode && (
