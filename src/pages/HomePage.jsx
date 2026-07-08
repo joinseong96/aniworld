@@ -24,6 +24,7 @@ export default function HomePage() {
 	// 더보기 버튼 클릭으로 추가 로딩 중인지 구분
 
 	useEffect(() => {
+		// 왜 useEffect 안에 async 함수를 따로 정의해서 즉시 실행하는지(async 콜백 불가 이슈)
 		const fetchPopularAnimes = async () => {
 			const gqlQuery = `
       query {
@@ -48,8 +49,12 @@ export default function HomePage() {
 			try {
 				const response = await fetch("https://graphql.anilist.co", {
 					method: "POST",
+					//GET은 URL에 데이터를 담아 보냄 → 길이 제한, 복잡한 데이터 표현에 부적합
+					// POST는 body에 데이터를 담아 보냄 → 길이 제한 없고, 복잡한 구조(JSON) 그대로 전달 가능
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ query: gqlQuery }),
+					// JSON.stringify는 자바스크립트 객체를 문자열로 바꿔주는 함수
+					// 네트워크로는 문자열만 주고 받을 수 있기 때문에 자바스크립트 객체를 감싸줘서 문자열로 보내기 위함
 				});
 
 				const data = await response.json();
@@ -59,7 +64,7 @@ export default function HomePage() {
 				}
 
 				setPopularAnimes(data.data.Page.media ?? []);
-			} catch (err) {
+			} catch {
 				setPopularAnimes([]);
 			} finally {
 				setPopularLoading(false);
@@ -122,7 +127,7 @@ export default function HomePage() {
 			}
 
 			setHasNextPage(data.data.Page.pageInfo.hasNextPage);
-		} catch (err) {
+		} catch {
 			setError("검색 중 오류가 발생했어요. 다시 시도해주세요.");
 		} finally {
 			setLoading(false);
