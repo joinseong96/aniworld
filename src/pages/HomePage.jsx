@@ -64,6 +64,8 @@ export default function HomePage() {
 				}
 
 				setPopularAnimes(data.data.Page.media ?? []);
+				// 쿼리를 담은 변수 data 안에 쿼리를 감싸고 있는 data 안에 Page 안에 media
+				// ?? [] 데이터가 없을 경우 빈 배열이라도 넣어서 undefined가 나와서 에러가 안 나게끔 하기 위함
 			} catch {
 				setPopularAnimes([]);
 			} finally {
