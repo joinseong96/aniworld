@@ -123,6 +123,7 @@ export default function HomePage() {
 			if (isLoadMore) {
 				setAnimes((prev) => [...prev, ...newAnimes]);
 				// 기존 목록 뒤에 새로 받아온 목록을 이어붙임
+				// ...는 배열 안에 배열이 생기는 걸 방지하고 껍데기를 벗기고 안에 내용물들이 합쳐 질 수 있게 해주는 스프레드 문법
 			} else {
 				setAnimes(newAnimes);
 				// 새 검색이면 기존 목록을 통째로 교체
