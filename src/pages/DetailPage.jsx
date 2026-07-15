@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
-// 컴포넌트가 처음 뜰 때 api를 호출하기 위한 useEffect, 상태관리를 위한 useState
+// 컴포넌트가 처음 마운트 될 때 api를 호출하기 위한 useEffect, 상태관리를 위한 useState
 import { useParams, useNavigate } from "react-router-dom";
 // URL에서 :id 값 꺼내기 위한 useParams, 뒤로가기 기능을 위한 useNavigate
 import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function DetailPage() {
 	const { id } = useParams();
+	// {}는 구조 분해 할당으로 id 속성 값만 따로 가져오는 것
 	// URL에서 id를 꺼냄 /anime/20으로 접속했으면 id가 "20"
 	const navigate = useNavigate();
 	// 페이지 이동 함수를 반환, navigate(-1)은 이전 페이지로 이동
 	const [anime, setAnime] = useState(null);
 	// API로 받아온 애니 상세 데이터 (처음엔 null)
 	const [loading, setLoading] = useState(true);
-	// HomePage랑 다르게 처음부터 true, 페이지가 뜨자마자 바로 API 호출하기 때문
+	// 처음부터 true, 페이지가 뜨자마자 바로 API 호출하기 때문
 	const [error, setError] = useState("");
 	const [isExpanded, setIsExpanded] = useState(false);
 	// 줄거리 더보기 / 접기 상태
@@ -79,6 +80,11 @@ export default function DetailPage() {
 				});
 
 				const data = await response.json();
+
+				if (!response.ok) {
+					throw new Error("데이터를 불러오는 데 실패했습니다.");
+				}
+
 				setAnime(data.data.Media);
 			} catch (err) {
 				if (err.name === "AbortError") return;
@@ -90,7 +96,7 @@ export default function DetailPage() {
 		};
 
 		setLoading(true);
-		// id가 바뀔 때마다 로딩 상태를 다시 켜줌 (이전 페이지 데이터가 잠깐 남는 것 방지)
+		// id가 바뀔 때마다 로딩 상태를 다시 켜줌 (fetch 요청을 기다리는 동안 이전 페이지 데이터가 잠깐 남는 것 방지)
 		fetchAnime();
 
 		return () => {
@@ -156,7 +162,7 @@ export default function DetailPage() {
 
 					<div className="flex gap-4 text-sm text-gray-300">
 						<span>⭐ {anime.averageScore ?? "N/A"}</span>
-						<span>📺 {anime.episodes ?? "?"}화</span>
+						<span>🎬 {anime.episodes ?? "?"}화</span>
 						<span>📅 {anime.startDate.year ?? "?"}년</span>
 					</div>
 
@@ -197,7 +203,6 @@ export default function DetailPage() {
 					)}
 				</div>
 			</div>
-
 			{anime.relations?.edges?.length > 0 && (
 				<div className="mt-10">
 					<h2 className="text-lg font-bold text-white mb-4">관련 작품</h2>
@@ -214,7 +219,7 @@ export default function DetailPage() {
 										SUMMARY: "요약",
 										FULL_STORY: "완전판",
 									}[edge.relationType] ?? edge.relationType;
-
+								// ?? : edge.relationType로 매핑 객체를 불러와서 무슨 버전인지를 정하지만 매핑 객체 리스트에 없는 애니 리스일 경우, OTHER로 분리
 								return (
 									<button
 										key={edge.node.id}
